@@ -21,5 +21,6 @@ Disclaimer: This project is meant to run locally on your machine. It is not mean
 * Clone this repository
 * Run `npm install` to install dependencies
 * Set up your GitHub account to allow access to your repository
+* Create a new repository on GitHub and push this Repository to it, don't fork it!
 * Config your git name and Email with `git config --global user.name "John Doe"` and `git config --global user.email`
 * Run `npm run dev` to start the application
