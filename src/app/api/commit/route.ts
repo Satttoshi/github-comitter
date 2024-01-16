@@ -23,6 +23,7 @@ export async function POST() {
     // Add and commit the changes
     await git.add(filePath);
     await git.commit('Auto-commit: Updated COMMITS.md');
+    await git.push();
 
     return NextResponse.json({
       status: 200,
