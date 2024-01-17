@@ -20,3 +20,11 @@ Commit created at 2024-01-17T13:40:49.122Z, message 'undefined' custom Time at u
 Commit created at 2024-01-17T13:50:55.811Z, message 'Test' custom Time at 2024-01-01T13:37:00
 Commit created at 2024-01-17T13:51:15.039Z, message 'hello wereld' custom Time at 2024-01-01T13:37:00
 Commit created at 2024-01-18T10:01:40.906Z, message '' custom Time at T13:37:00
+Commit created at 2024-01-18T10:33:36.501Z, message '' custom Time at T13:37:00
+Commit created at 2024-01-18T10:33:44.815Z, message 'lol' custom Time at T13:37:00
+Commit created at 2024-01-18T10:34:30.894Z, message 'lol' custom Time at 2024-01-18T11:34T13:37:00
+Commit created at 2024-01-18T10:34:46.980Z, message 'lol' custom Time at 2024-01-18T11:34:00
+Commit created at 2024-01-18T10:41:27.380Z, message '' custom Time at 2024-01-18T11:39:00
+Commit created at 2024-01-18T10:42:42.168Z, message '' custom Time at 2024-01-18T11:42:00
+Commit created at 2024-01-18T10:44:06.143Z, message 'no message' custom Time at 2024-01-18T11:44:00
+0 Commit created at 2024-01-18T11:53, message 'test commit' custom Time set at 2024-01-17T04:20:00
