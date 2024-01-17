@@ -16,7 +16,7 @@ Its purpose is to mirror commits manually made within projects where you do not 
 
 ### Installing
 
-Disclaimer: This project is meant to run locally on your machine. It is not meant to be deployed to a server.
+Hint: This project is meant to run locally on your machine. It is not meant to be deployed to a server.
 
 * Clone this repository
 * Run `npm install` to install dependencies
@@ -32,4 +32,4 @@ If you only want the credentials within this repository, then remove the `--glob
 * Open your browser and navigate to `http://localhost:3000`
 
 All your commits being stored in the [COMMITS.md](src/commits/COMMITS.md) file,
-where you can check the latest commits and their timestamps.
+where you can check the latest commits, the message and their timestamps.
