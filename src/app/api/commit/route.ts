@@ -1,33 +1,35 @@
 import fs from 'fs';
 import path from 'path';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import simpleGit from 'simple-git';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    // Define the path to the COMMIT.md file
+    const formData = await request.formData();
+    const customDate = formData.get('customTime') + 'T13:37:00';
+    const commitMessage = formData.get('commitMessage');
+    console.log(customDate, commitMessage);
+
     const filePath = path.join(process.cwd(), 'src', 'commits', 'COMMITS.md');
-
-    // Read the current content of the file
     const currentContent = fs.readFileSync(filePath, 'utf8');
-
-    // Prepare the new line to be added
-    const newLine = `New commit made at ${new Date().toISOString()}\n`;
-
-    // Write the new line to the file
+    const newLine = `Commit created at ${new Date().toISOString()}, message '${commitMessage}' custom Time at ${customDate}\n`;
     fs.writeFileSync(filePath, currentContent + newLine);
 
-    // Initialize simple-git
     const git = simpleGit();
-
-    // Add and commit the changes
     await git.add(filePath);
-    await git.commit('Auto-commit: Updated COMMITS.md');
+    await git.raw([
+      'commit',
+      '-m',
+      `auto-commit: ${commitMessage}: ${customDate}`,
+      '--date',
+      customDate,
+    ]);
+
     await git.push();
 
     return NextResponse.json({
       status: 200,
-      message: 'Commit file updated and changes committed',
+      message: newLine,
     });
   } catch (err: any) {
     console.error(err);
