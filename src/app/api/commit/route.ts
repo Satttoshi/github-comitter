@@ -16,25 +16,27 @@ export async function POST(request: NextRequest) {
     console.log(customDate, commitMessage, commitAmount);
 
     const filePath = path.join(process.cwd(), 'src', 'commits', 'COMMITS.md');
-    const currentContent = fs.readFileSync(filePath, 'utf8');
-    const newLine = `Commit created at ${currentTimeZoneToIsoString()}, message '${commitMessage}' custom Time set at ${customDate}\n`;
-    fs.writeFileSync(filePath, currentContent + newLine);
-
     const git = simpleGit();
-    await git.add(filePath);
-    await git.raw([
-      'commit',
-      '-m',
-      `auto-commit: ${commitMessage}: ${customDate}`,
-      '--date',
-      customDate,
-    ]);
+
+    for (let i = 0; i < Number(commitAmount); i++) {
+      const currentContent = fs.readFileSync(filePath, 'utf8');
+      const newLine = `${i} Commit created at ${currentTimeZoneToIsoString()}, message '${commitMessage}' custom Time set at ${customDate}\n`;
+      fs.writeFileSync(filePath, currentContent + newLine);
+      await git.add(filePath);
+      await git.raw([
+        'commit',
+        '-m',
+        `auto-commit-${i}: ${commitMessage}: ${customDate}`,
+        '--date',
+        customDate,
+      ]);
+    }
 
     await git.push();
 
     return NextResponse.json({
       status: 200,
-      message: newLine,
+      message: `added ${commitAmount} commits, with message ${commitMessage} and custom date ${customDate}`,
     });
   } catch (err: any) {
     console.error(err);
