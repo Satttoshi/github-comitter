@@ -14,15 +14,8 @@ export default function Home() {
     console.log(response);
   }
 
-  /*  <h2>App</h2>
-  <form className="flex flex-col" onSubmit={onSubmit}>
-    <input className="border-2" type="text" name="commitMessage"/>
-    <input type="date" name="customTime"/>
-    <button type="submit">Submit</button>
-  </form>*/
-
   return (
-    <main>
+    <main className="flex justify-center">
       <Form onSubmit={handleSubmit} />
     </main>
   );
