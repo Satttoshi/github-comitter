@@ -5,13 +5,15 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
 
 type Props = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
 export function Form({ onSubmit }: Props) {
+  const [commitAmount, setCommitAmount] = useState<number>(1);
+
   return (
     <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
       <div className="container px-4 md:px-6">
@@ -45,16 +47,34 @@ export function Form({ onSubmit }: Props) {
                   <Input
                     className="w-1/2 mr-2"
                     name="commitAmount"
+                    value={commitAmount}
                     id="commit-amount"
                     max="99"
                     min="1"
                     type="number"
+                    onChange={(e) => setCommitAmount(Number(e.target.value))}
                   />
                   <div className="flex justify-between w-1/2">
-                    <Button className="w-1/2 mr-2" type="button">
+                    <Button
+                      className="w-1/2 mr-2"
+                      type="button"
+                      onClick={() =>
+                        setCommitAmount((prev) =>
+                          prev === 1 ? prev : prev - 1,
+                        )
+                      }
+                    >
                       -1
                     </Button>
-                    <Button className="w-1/2" type="button">
+                    <Button
+                      className="w-1/2"
+                      type="button"
+                      onClick={() =>
+                        setCommitAmount((prev) =>
+                          prev === 99 ? prev : prev + 1,
+                        )
+                      }
+                    >
                       +1
                     </Button>
                   </div>
