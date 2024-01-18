@@ -1,5 +1,7 @@
 # GitHub Committer
 
+<img width="635" alt="image" src="https://github.com/Satttoshi/github-comitter/assets/109807794/91741062-8e4d-4c45-a13c-803aeb49cba0">
+
 ## Description
 
 This project creates Auto commits and pushes them to a remote repository on GitHub to create Contributions.
