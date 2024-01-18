@@ -4,8 +4,14 @@
 
 ## Description
 
-This project creates Auto commits and pushes them to a remote repository on GitHub to create Contributions.
+- Set commits to specific dates and times, 
+- Custom commit messages
+- Bulk commit with The GitHub Committer
+
+This project creates commits and pushes them to a remote repository on GitHub to create Contributions.
 Its purpose is to mirror commits manually made within projects where you do not have direct access to your git account.
+
+!!! Please do not use this to fake your contributions to other projects. !!!
 
 ## Getting Started
 
