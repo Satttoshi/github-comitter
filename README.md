@@ -30,6 +30,12 @@ Hint: This project is meant to run locally on your machine. It is not meant to b
 * Run `npm install` to install dependencies
 * Set up your GitHub account to allow access to your repository
 * Delete the `.git` folder
+* Open terminal and use following commands: 
+```
+git init
+git add .
+git commit -m "init"
+```
 * Create a new repository on GitHub and push this Repository to it, don't fork it!
 * Config your git name and Email with
 `git config --global user.name "John Doe"` and `git config --global user.email`.
