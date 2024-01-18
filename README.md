@@ -11,7 +11,7 @@
 This project creates commits and pushes them to a remote repository on GitHub to create Contributions.
 Its purpose is to mirror commits manually made within projects where you do not have direct access to your git account.
 
-!!! Please do not use this to fake your contributions to other projects. !!!
+⚠️ Please do not use this to fake your contributions to other projects. ⚠️
 
 ## Getting Started
 
