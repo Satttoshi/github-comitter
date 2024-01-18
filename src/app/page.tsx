@@ -1,9 +1,10 @@
 'use client';
 
 import { FormEvent } from 'react';
+import { Form } from '@/components/form';
 
 export default function Home() {
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const response = await fetch('/api/commit', {
@@ -13,14 +14,16 @@ export default function Home() {
     console.log(response);
   }
 
+  /*  <h2>App</h2>
+  <form className="flex flex-col" onSubmit={onSubmit}>
+    <input className="border-2" type="text" name="commitMessage"/>
+    <input type="date" name="customTime"/>
+    <button type="submit">Submit</button>
+  </form>*/
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <h2>App</h2>
-      <form className="flex flex-col" onSubmit={onSubmit}>
-        <input type="text" name="commitMessage" />
-        <input type="date" name="customTime" />
-        <button type="submit">Submit</button>
-      </form>
+    <main>
+      <Form onSubmit={handleSubmit} />
     </main>
   );
 }
