@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FormEvent, useState } from 'react';
+import { currentTimeZoneToIsoString } from '@/lib/utils';
 
 type Props = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -37,6 +38,7 @@ export function Form({ onSubmit }: Props) {
                 <Label htmlFor="commit-date">Commit Date</Label>
                 <Input
                   name="customTime"
+                  defaultValue={currentTimeZoneToIsoString()}
                   id="commit-date"
                   type="datetime-local"
                 />
