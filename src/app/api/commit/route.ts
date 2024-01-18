@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < Number(commitAmount); i++) {
       const currentContent = fs.readFileSync(filePath, 'utf8');
-      const newLine = `${i} Commit created at ${currentTimeZoneToIsoString()}, message '${commitMessage}' custom Time set at ${customDate}\n`;
+      const newLine = `- Commit created at ${currentTimeZoneToIsoString()}, message: '${commitMessage}' ${i} custom Time set at ${customDate}\n`;
       fs.writeFileSync(filePath, currentContent + newLine);
       await git.add(filePath);
       await git.raw([
