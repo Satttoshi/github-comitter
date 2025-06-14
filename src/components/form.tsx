@@ -16,14 +16,9 @@ export function Form({ onSubmit }: Props) {
   const [commitAmount, setCommitAmount] = useState<number>(1);
 
   return (
-    <section className="w-full flex justify-center items-center mt-28">
+    <section className="w-full flex justify-center items-center">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center space-y-8 text-center">
-          <div className="space-y-2">
-            <h1 className="font-bold tracking-tighter text-5xl lg:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 animate-gradient-x">
-              Github Committer
-            </h1>
-          </div>
           <form className="w-full max-w-md space-y-4" onSubmit={onSubmit}>
             <div className="space-y-2">
               <Label htmlFor="commit-message">Commit Message</Label>
