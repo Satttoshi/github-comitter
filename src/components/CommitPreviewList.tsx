@@ -15,7 +15,7 @@ export function CommitPreviewList({
   return (
     <CommitPreviewListClient
       commits={commits}
-      onCommitsSelectedAction={onCommitsSelected}
+      commitsSelectedAction={onCommitsSelected}
       onBack={onBack}
     />
   );

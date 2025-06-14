@@ -12,60 +12,52 @@ interface CommitExtractionFormProps {
   contributors: Contributor[];
   onExtractAction: (repositoryPath: string, contributors: Contributor[], fromDate: string, toDate: string) => Promise<{ commits: CommitInfo[]; error?: string }>;
   onBack: () => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 export function CommitExtractionForm({ 
   repositoryPath, 
   contributors, 
   onExtractAction, 
-  onBack 
+  onBack,
+  isLoading = false,
+  error = null
 }: CommitExtractionFormProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subMonths(new Date(), 1),
     to: new Date(),
   });
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleExtractCommits = async () => {
     if (!dateRange?.from || !dateRange?.to) {
-      setError('Please select a date range');
-      return;
+      setLocalError('Please select a date range');
+      return { commits: [], error: 'Please select a date range' };
     }
 
-    setIsLoading(true);
-    setError(null);
+    setLocalError(null);
 
     try {
       // Format dates for Git (ISO format)
-      const fromDate = dateRange.from.toISOString();
-      const toDate = dateRange.to.toISOString();
+      // Use format that Git understands better (YYYY-MM-DD)
+      const fromDate = dateRange.from.toISOString().split('T')[0];
+      const toDate = new Date(dateRange.to.getTime() + 86400000).toISOString().split('T')[0]; // Add one day to include the end date
 
       console.log('Extracting commits with:', { fromDate, toDate, repositoryPath, contributors });
 
-      const result = await onExtractAction(
+      return await onExtractAction(
         repositoryPath,
         contributors,
         fromDate,
         toDate
       );
-
-      if (result.error) {
-        setError(result.error);
-      } else if (result.commits.length === 0) {
-        setError('No commits found in the selected date range for the selected contributors.');
-      } else {
-        // If successful, the parent component will handle the result
-        return result;
-      }
     } catch (err) {
-      setError('An error occurred while extracting commits');
+      const errorMessage = 'An error occurred while extracting commits';
+      setLocalError(errorMessage);
       console.error('Error in handleExtractCommits:', err);
-    } finally {
-      setIsLoading(false);
+      return { commits: [], error: errorMessage };
     }
-    
-    return { commits: [], error: error || undefined };
   };
 
   return (

@@ -8,30 +8,30 @@ import { CommitInfo } from '@/app/actions/repository';
 
 interface CommitPreviewListClientProps {
   commits: CommitInfo[];
-  onCommitsSelectedAction: (commits: CommitInfo[]) => Promise<void>;
+  commitsSelectedAction: (commits: CommitInfo[]) => Promise<void>;
   onBack: () => void;
 }
 
 export function CommitPreviewListClient({ 
   commits, 
-  onCommitsSelectedAction, 
+  commitsSelectedAction, 
   onBack 
 }: CommitPreviewListClientProps) {
   const [selectedCommits, setSelectedCommits] = useState<CommitInfo[]>(commits);
   const [currentPage, setCurrentPage] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const commitsPerPage = 10;
-  
+
   // Calculate pagination
   const totalPages = Math.ceil(commits.length / commitsPerPage);
   const indexOfLastCommit = currentPage * commitsPerPage;
   const indexOfFirstCommit = indexOfLastCommit - commitsPerPage;
   const currentCommits = commits.slice(indexOfFirstCommit, indexOfLastCommit);
-  
+
   const toggleCommit = (commit: CommitInfo) => {
     setSelectedCommits(prev => {
       const isSelected = prev.some(c => c.hash === commit.hash);
-      
+
       if (isSelected) {
         return prev.filter(c => c.hash !== commit.hash);
       } else {
@@ -39,7 +39,7 @@ export function CommitPreviewListClient({
       }
     });
   };
-  
+
   const handleSelectAll = () => {
     if (selectedCommits.length === commits.length) {
       setSelectedCommits([]);
@@ -47,18 +47,18 @@ export function CommitPreviewListClient({
       setSelectedCommits([...commits]);
     }
   };
-  
+
   const handleContinue = async () => {
     setIsSubmitting(true);
     try {
-      await onCommitsSelectedAction(selectedCommits);
+      await commitsSelectedAction(selectedCommits);
     } catch (error) {
       console.error('Error selecting commits:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'MMM dd, yyyy HH:mm');
@@ -66,7 +66,7 @@ export function CommitPreviewListClient({
       return dateString;
     }
   };
-  
+
   return (
     <div className="space-y-6 w-full">
       <div className="flex justify-between items-center">
@@ -81,7 +81,7 @@ export function CommitPreviewListClient({
           </Button>
         </div>
       </div>
-      
+
       {commits.length === 0 ? (
         <div className="bg-yellow-50 p-4 rounded-md text-yellow-700">
           No commits found in the selected date range for the selected contributors.
@@ -129,7 +129,7 @@ export function CommitPreviewListClient({
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center space-x-2 mt-4">
@@ -156,7 +156,7 @@ export function CommitPreviewListClient({
           )}
         </>
       )}
-      
+
       <div className="flex justify-between pt-4">
         <Button variant="outline" onClick={onBack}>
           Back

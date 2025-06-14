@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { CommitExtractionForm } from '@/components/CommitExtractionForm';
 import { CommitPreviewList } from '@/components/CommitPreviewList';
@@ -18,6 +20,8 @@ export function CommitExtraction({
 }: CommitExtractionProps) {
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [showCommits, setShowCommits] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   // This function will be passed to the CommitExtractionForm component
   const handleExtractCommits = async (
@@ -26,19 +30,41 @@ export function CommitExtraction({
     fromDate: string,
     toDate: string
   ) => {
-    const result = await extractCommitsAction(
-      repoPath,
-      contribs,
-      fromDate,
-      toDate
-    );
+    setIsLoading(true);
+    setError(null);
 
-    if (!result.error && result.commits.length > 0) {
+    try {
+      console.log('Extracting commits with:', { repoPath, contribs, fromDate, toDate });
+
+      const result = await extractCommitsAction(
+        repoPath,
+        contribs,
+        fromDate,
+        toDate
+      );
+
+      console.log('Extract result:', result);
+
+      if (result.error) {
+        setError(result.error);
+        return result;
+      }
+
+      if (result.commits.length === 0) {
+        setError('No commits found in the selected date range for the selected contributors.');
+        return result;
+      }
+
       setCommits(result.commits);
       setShowCommits(true);
+      return result;
+    } catch (err) {
+      console.error('Error extracting commits:', err);
+      setError('An error occurred while extracting commits');
+      return { commits: [], error: 'An error occurred while extracting commits' };
+    } finally {
+      setIsLoading(false);
     }
-
-    return result;
   };
 
   // This function will be passed to the CommitPreviewList component
@@ -48,6 +74,7 @@ export function CommitExtraction({
 
   const handleBackToDateSelection = () => {
     setShowCommits(false);
+    setError(null);
   };
 
   return (
@@ -58,6 +85,8 @@ export function CommitExtraction({
           contributors={contributors}
           onExtractAction={handleExtractCommits}
           onBack={onBack}
+          isLoading={isLoading}
+          error={error}
         />
       ) : (
         <CommitPreviewList 

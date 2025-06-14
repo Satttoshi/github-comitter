@@ -137,46 +137,64 @@ export async function extractCommitsAction(
     for (const contributor of contributors) {
       console.log('Processing contributor:', contributor);
 
-      // Create author filter string - remove quotes to avoid issues with shell escaping
-      const authorFilter = `${contributor.name} <${contributor.email}>`;
-      console.log('Author filter:', authorFilter);
+      try {
+        // Create author filter string
+        const authorFilter = `${contributor.name} <${contributor.email}>`;
+        console.log('Author filter:', authorFilter);
 
-      // Get commits for this contributor in the date range
-      // Fix: Remove quotes from the author filter as simple-git will handle escaping
-      const logOptions = [
-        '--author=' + authorFilter,
-        '--since=' + fromDate,
-        '--until=' + toDate,
-        '--date=iso',
-        '--pretty=format:%H|%s|%ad|%an|%ae'
-      ];
-      console.log('Git log options:', logOptions);
+        // Get commits for this contributor in the date range
+        // Use --date-order to ensure commits are ordered by date
+        const logOptions = [
+          `--author=${authorFilter}`,
+          `--since=${fromDate}`,
+          `--until=${toDate}`,
+          '--date=iso',
+          '--date-order',
+          '--pretty=format:%H|%s|%ad|%an|%ae'
+        ];
+        console.log('Git log options:', logOptions);
 
-      const result = await git.raw(['log', ...logOptions]);
-      console.log('Git log result length:', result ? result.length : 0);
-      console.log('Git log result sample:', result ? result.substring(0, 200) + '...' : 'empty');
+        // Use git.log instead of git.raw for better handling
+        const result = await git.raw(['log', ...logOptions]);
+        console.log('Git log result length:', result ? result.length : 0);
+        console.log('Git log result sample:', result ? result.substring(0, 200) + '...' : 'empty');
 
-      if (result) {
-        // Parse the commit log
-        const commits = result
-          .split('\n')
-          .filter(line => line.trim() !== '')
-          .map(line => {
-            const [hash, message, date, author, email] = line.split('|');
-            return {
-              hash,
-              message,
-              date,
-              author,
-              email,
-              selected: true // Default to selected
-            };
-          });
+        if (result && result.trim() !== '') {
+          // Parse the commit log
+          const commits = result
+            .split('\n')
+            .filter(line => line.trim() !== '')
+            .map(line => {
+              const parts = line.split('|');
+              // Handle case where commit message might contain the delimiter
+              if (parts.length >= 5) {
+                const hash = parts[0];
+                const message = parts.slice(1, parts.length - 3).join('|');
+                const date = parts[parts.length - 3];
+                const author = parts[parts.length - 2];
+                const email = parts[parts.length - 1];
 
-        console.log(`Found ${commits.length} commits for contributor ${contributor.name}`);
-        allCommits.push(...commits);
-      } else {
-        console.log(`No commits found for contributor ${contributor.name}`);
+                return {
+                  hash,
+                  message,
+                  date,
+                  author,
+                  email,
+                  selected: true // Default to selected
+                };
+              }
+              return null;
+            })
+            .filter((commit): commit is CommitInfo => commit !== null);
+
+          console.log(`Found ${commits.length} commits for contributor ${contributor.name}`);
+          allCommits.push(...commits);
+        } else {
+          console.log(`No commits found for contributor ${contributor.name}`);
+        }
+      } catch (contributorError) {
+        console.error(`Error processing contributor ${contributor.name}:`, contributorError);
+        // Continue with next contributor instead of failing the whole operation
       }
     }
 
