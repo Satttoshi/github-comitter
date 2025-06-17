@@ -16,7 +16,10 @@ export interface CommitInfo {
   date: string;
   author: string;
   email: string;
-  selected?: boolean;
+  selected: boolean;
+  isSquashed?: boolean;
+  originalSquashHash?: string;
+  isSquashMerge?: boolean;
 }
 
 export async function validateRepository(repositoryPath: string): Promise<{ valid: boolean; error?: string }> {
@@ -114,6 +117,137 @@ export async function selectCommitsAction(commits: CommitInfo[]): Promise<{ succ
   }
 }
 
+async function parseSquashedCommits(
+  git: SimpleGit,
+  commitHash: string,
+  contributor: Contributor,
+  commitDate: string
+): Promise<CommitInfo[]> {
+  try {
+    // Get the full commit message and details
+    const result = await git.raw(['show', '--format=%B', '--no-patch', commitHash]);
+    const fullMessage = result.trim();
+    
+    console.log(`\n=== ANALYZING COMMIT ${commitHash.substring(0, 7)} ===`);
+    console.log(`Full message:\n${fullMessage}`);
+    console.log(`Message length: ${fullMessage.length}`);
+    
+    // Get parent information
+    const parents = await git.raw(['show', '--format=%P', '--no-patch', commitHash]);
+    const parentHashes = parents.trim().split(' ').filter(h => h.length > 0);
+    console.log(`Parents: ${parentHashes.length} - ${parentHashes.join(', ')}`);
+    
+    let subCommits: CommitInfo[] = [];
+    
+    // Check if this is a merge commit (has multiple parents)
+    if (parentHashes.length === 2) {
+      console.log(`This is a merge commit - checking for squashed commits`);
+      
+      try {
+        // Get commits that were merged (from feature branch)
+        const mergeRange = `${parentHashes[0]}..${parentHashes[1]}`;
+        console.log(`Checking range: ${mergeRange}`);
+        
+        const squashedCommitsResult = await git.raw(['log', '--pretty=format:%H|%s|%an|%ae|%ad', '--date=iso', mergeRange]);
+        
+        if (squashedCommitsResult && squashedCommitsResult.trim()) {
+          const squashedCommitLines = squashedCommitsResult.trim().split('\n');
+          console.log(`Found ${squashedCommitLines.length} commits in merge range`);
+          
+          if (squashedCommitLines.length > 0) {
+            subCommits = squashedCommitLines.map((line, index) => {
+              const parts = line.split('|');
+              const hash = parts[0] || `${commitHash.substring(0, 7)}-${index}`;
+              const message = parts[1] || 'Squashed commit';
+              const author = parts[2] || contributor.name;
+              const email = parts[3] || contributor.email;
+              const date = parts[4] || commitDate;
+              
+              console.log(`  - Subcommit: ${hash.substring(0, 7)} - ${message}`);
+              
+              return {
+                hash,
+                message,
+                date,
+                author,
+                email,
+                selected: true,
+                isSquashed: true,
+                originalSquashHash: commitHash
+              };
+            });
+            
+            console.log(`Returning ${subCommits.length} subcommits for merge`);
+            return subCommits;
+          }
+        } else {
+          console.log(`No commits found in merge range ${mergeRange}`);
+        }
+      } catch (mergeError) {
+        console.log('Error checking merge range:', mergeError);
+      }
+    } else {
+      console.log(`Not a merge commit (${parentHashes.length} parents)`);
+    }
+    
+    // Check for GitHub squash merge patterns in commit message
+    // These commits have patterns like "* feat: some feature" in their messages
+    const squashPatterns = [
+      /^\*\s+([a-f0-9]{7,40})\s+(.+)$/gm, // GitHub squash with hash: "* abc1234 commit message"
+      /^\*\s+(.+)$/gm, // GitHub squash format: "* feat: commit message"
+      /^-\s+(.+)$/gm, // Simple dash format: "- commit message"
+      /^\d+\.\s+(.+)$/gm, // Numbered format: "1. commit message"
+    ];
+    
+    for (const pattern of squashPatterns) {
+      const matches = Array.from(fullMessage.matchAll(pattern));
+      
+      if (matches.length > 1) {
+        console.log(`Found ${matches.length} subcommits using pattern: ${pattern.source}`);
+        
+        subCommits = matches.map((match, index) => {
+          let subHash: string;
+          let subMessage: string;
+          
+          if (pattern.source.includes('([a-f0-9]{7,40})')) {
+            // Pattern includes hash capture group
+            subHash = match[1];
+            subMessage = match[2] || match[1];
+          } else {
+            // Pattern only captures message, generate pseudo-hash
+            subHash = `${commitHash.substring(0, 7)}-${index}`;
+            subMessage = match[1];
+          }
+          
+          console.log(`  - Pattern match: ${subHash.substring(0, 7)} - ${subMessage}`);
+          
+          return {
+            hash: subHash,
+            message: subMessage,
+            date: commitDate,
+            author: contributor.name,
+            email: contributor.email,
+            selected: true,
+            isSquashed: true,
+            originalSquashHash: commitHash
+          };
+        });
+        
+        if (subCommits.length > 0) {
+          console.log(`Returning ${subCommits.length} subcommits from pattern matching`);
+          return subCommits;
+        }
+      }
+    }
+    
+    console.log(`No squashed commits detected in ${commitHash.substring(0, 7)}`);
+    return [];
+  } catch (error) {
+    console.error('Error parsing squashed commits:', error);
+    return [];
+  }
+}
+
 export async function extractCommitsAction(
   repositoryPath: string,
   contributors: Contributor[],
@@ -187,8 +321,26 @@ export async function extractCommitsAction(
             })
             .filter((commit): commit is CommitInfo => commit !== null);
 
-          console.log(`Found ${commits.length} commits for contributor ${contributor.name}`);
-          allCommits.push(...commits);
+          console.log(`Found ${commits.length} regular commits for contributor ${contributor.name}`);
+          
+          // Check each commit for squashed content and add both original and subcommits
+          for (const commit of commits) {
+            const squashedCommits = await parseSquashedCommits(git, commit.hash, contributor, commit.date);
+            if (squashedCommits.length > 0) {
+              // Mark the original commit as a squash merge and add it
+              console.log(`Found squash merge with ${squashedCommits.length} individual commits`);
+              const squashMergeCommit = {
+                ...commit,
+                isSquashMerge: true
+              };
+              allCommits.push(squashMergeCommit);
+              // Also add all the extracted subcommits
+              allCommits.push(...squashedCommits);
+            } else {
+              // Not a squashed commit, add as is
+              allCommits.push(commit);
+            }
+          }
         } else {
           console.log(`No commits found for contributor ${contributor.name}`);
         }
@@ -198,11 +350,35 @@ export async function extractCommitsAction(
       }
     }
 
+    // Remove duplicates based on a composite key: message + date + author
+    const seenCommits = new Set<string>();
+    const uniqueCommits: CommitInfo[] = [];
+    let duplicatesRemoved = 0;
+    
+    for (const commit of allCommits) {
+      // Create a composite key to identify truly duplicate commits
+      const commitKey = `${commit.message}|${commit.date}|${commit.author}|${commit.email}`;
+      
+      if (!seenCommits.has(commitKey)) {
+        seenCommits.add(commitKey);
+        uniqueCommits.push(commit);
+      } else {
+        duplicatesRemoved++;
+        console.log(`Removed duplicate commit: ${commit.hash.substring(0, 7)} - ${commit.message.substring(0, 50)}...`);
+      }
+    }
+    
     // Sort commits by date (newest first)
-    allCommits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    uniqueCommits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    const regularCommits = uniqueCommits.filter(c => !c.isSquashed).length;
+    const squashedCommits = uniqueCommits.filter(c => c.isSquashed).length;
+    
     console.log(`Total commits found: ${allCommits.length}`);
+    console.log(`Duplicates removed: ${duplicatesRemoved}`);
+    console.log(`Final unique commits: ${uniqueCommits.length} (${regularCommits} regular, ${squashedCommits} from squashed merges)`);
 
-    return { commits: allCommits };
+    return { commits: uniqueCommits };
   } catch (error) {
     console.error('Error extracting commits:', error);
     return { 

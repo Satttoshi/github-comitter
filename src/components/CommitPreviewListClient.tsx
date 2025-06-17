@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -67,10 +67,45 @@ export function CommitPreviewListClient({
     }
   };
 
+  const regularCommitsCount = commits.filter(c => !c.isSquashed).length;
+  const squashedCommitsCount = commits.filter(c => c.isSquashed).length;
+
+  // Group commits by their original squash hash for better visualization
+  const groupedCommits = currentCommits.reduce((groups, commit) => {
+    if (commit.isSquashMerge) {
+      // This is a squash merge commit, create a new group for it
+      const key = commit.hash;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      // Add the merge commit itself as the first item
+      groups[key].push(commit);
+    } else if (commit.isSquashed && commit.originalSquashHash) {
+      // This is a subcommit, add it to the existing group
+      const key = commit.originalSquashHash;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(commit);
+    } else {
+      // Regular commits go into a special "regular" group
+      if (!groups['regular']) {
+        groups['regular'] = [];
+      }
+      groups['regular'].push(commit);
+    }
+    return groups;
+  }, {} as Record<string, CommitInfo[]>);
+
   return (
     <div className="space-y-6 w-full">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Select Commits to Import</h3>
+        <div>
+          <h3 className="text-lg font-medium">Select Commits to Import</h3>
+          <div className="text-sm text-gray-600 mt-1">
+            {commits.length} total commits ({regularCommitsCount} regular, {squashedCommitsCount} from squashed merges)
+          </div>
+        </div>
         <div className="space-x-2">
           <Button 
             variant="outline" 
@@ -96,6 +131,9 @@ export function CommitPreviewListClient({
                     Select
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -107,24 +145,72 @@ export function CommitPreviewListClient({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentCommits.map((commit) => (
-                  <tr key={commit.hash} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Checkbox 
-                        checked={selectedCommits.some(c => c.hash === commit.hash)}
-                        onCheckedChange={() => toggleCommit(commit)}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(commit.date)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {commit.author}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 truncate max-w-md">
-                      {commit.message}
-                    </td>
-                  </tr>
+                {Object.entries(groupedCommits).map(([groupKey, groupCommits]) => (
+                  <React.Fragment key={groupKey}>
+                    {/* Group header for squashed commits */}
+                    {groupKey !== 'regular' && (
+                      <tr className="bg-blue-100 border-t-2 border-blue-200">
+                        <td colSpan={5} className="px-6 py-3">
+                          <div className="flex items-center space-x-3">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-200 text-blue-900">
+                              📦 Squash Merge
+                            </span>
+                            <span className="text-sm font-medium text-blue-900">
+                              {groupKey.substring(0, 7)} ({groupCommits.length} commits)
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    
+                    {/* Individual commits in the group */}
+                    {groupCommits.map((commit) => (
+                      <tr key={commit.hash} className={`hover:bg-gray-50 ${commit.isSquashed ? 'bg-blue-50' : ''}`}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Checkbox 
+                            checked={selectedCommits.some(c => c.hash === commit.hash)}
+                            onCheckedChange={() => toggleCommit(commit)}
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {commit.isSquashMerge ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              Merge
+                            </span>
+                          ) : commit.isSquashed ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Squashed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              Regular
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(commit.date)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {commit.author}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                          <div className="group relative">
+                            <div className="truncate pr-4" title={commit.message}>
+                              {commit.isSquashed && (
+                                <span className="text-blue-600 mr-1">└─</span>
+                              )}
+                              {commit.message}
+                            </div>
+                            {commit.message.length > 60 && (
+                              <div className="absolute left-0 top-full mt-1 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10 max-w-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                {commit.message}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
