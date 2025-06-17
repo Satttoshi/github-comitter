@@ -9,13 +9,13 @@ import { CommitInfo } from '@/app/actions/repository';
 interface CommitPreviewListClientProps {
   commits: CommitInfo[];
   commitsSelectedAction: (commits: CommitInfo[]) => Promise<void>;
-  onBack: () => void;
+  onBackAction: () => void;
 }
 
 export function CommitPreviewListClient({
   commits,
   commitsSelectedAction,
-  onBack
+  onBackAction
 }: CommitPreviewListClientProps) {
   const [selectedCommits, setSelectedCommits] = useState<CommitInfo[]>(commits);
   const [currentPage, setCurrentPage] = useState(1);
@@ -229,7 +229,7 @@ export function CommitPreviewListClient({
       )}
 
       <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBackAction}>
           Back
         </Button>
         <Button

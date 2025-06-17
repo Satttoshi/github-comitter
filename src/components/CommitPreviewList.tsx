@@ -7,16 +7,16 @@ interface CommitPreviewListProps {
   onBack: () => void;
 }
 
-export function CommitPreviewList({ 
-  commits, 
-  onCommitsSelected, 
-  onBack 
+export function CommitPreviewList({
+  commits,
+  onCommitsSelected,
+  onBack
 }: CommitPreviewListProps) {
   return (
     <CommitPreviewListClient
       commits={commits}
       commitsSelectedAction={onCommitsSelected}
-      onBack={onBack}
+      onBackAction={onBack}
     />
   );
 }

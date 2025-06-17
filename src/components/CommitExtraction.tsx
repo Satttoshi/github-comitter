@@ -12,11 +12,11 @@ interface CommitExtractionProps {
   onBack: () => void;
 }
 
-export function CommitExtraction({ 
-  repositoryPath, 
-  contributors, 
-  onCommitsSelectedAction, 
-  onBack 
+export function CommitExtraction({
+  repositoryPath,
+  contributors,
+  onCommitsSelectedAction,
+  onBack
 }: CommitExtractionProps) {
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [showCommits, setShowCommits] = useState<boolean>(false);
@@ -84,12 +84,12 @@ export function CommitExtraction({
           repositoryPath={repositoryPath}
           contributors={contributors}
           onExtractAction={handleExtractCommits}
-          onBack={onBack}
+          onBackAction={onBack}
           isLoading={isLoading}
           error={error}
         />
       ) : (
-        <CommitPreviewList 
+        <CommitPreviewList
           commits={commits}
           onCommitsSelected={handleCommitsSelected}
           onBack={handleBackToDateSelection}

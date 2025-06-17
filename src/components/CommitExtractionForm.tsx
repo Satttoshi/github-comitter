@@ -11,16 +11,16 @@ interface CommitExtractionFormProps {
   repositoryPath: string;
   contributors: Contributor[];
   onExtractAction: (repositoryPath: string, contributors: Contributor[], fromDate: string, toDate: string) => Promise<{ commits: CommitInfo[]; error?: string }>;
-  onBack: () => void;
+  onBackAction: () => void;
   isLoading?: boolean;
   error?: string | null;
 }
 
-export function CommitExtractionForm({ 
-  repositoryPath, 
-  contributors, 
-  onExtractAction, 
-  onBack,
+export function CommitExtractionForm({
+  repositoryPath,
+  contributors,
+  onExtractAction,
+  onBackAction,
   isLoading = false,
   error = null
 }: CommitExtractionFormProps) {
@@ -67,9 +67,9 @@ export function CommitExtractionForm({
         First, select a date range to extract commits from the selected contributors. Then click the &quot;Extract Commits&quot; button below.
       </p>
 
-      <DateRangePicker 
-        dateRange={dateRange} 
-        onDateRangeChange={setDateRange} 
+      <DateRangePicker
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
       />
 
       {error && (
@@ -88,10 +88,10 @@ export function CommitExtractionForm({
       </div>
 
       <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onBack} className="px-6">
+        <Button variant="outline" onClick={onBackAction} className="px-6">
           Back
         </Button>
-        <Button 
+        <Button
           onClick={handleExtractCommits}
           disabled={isLoading || !dateRange?.from || !dateRange?.to}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 text-base font-medium"
