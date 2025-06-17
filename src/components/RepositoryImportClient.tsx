@@ -6,7 +6,6 @@ import { ContributorSelector } from '@/components/ContributorSelector';
 import { CommitExtraction } from '@/components/CommitExtraction';
 import { CommitImport } from '@/components/CommitImport';
 import { Contributor, CommitInfo, selectCommitsAction } from '@/app/actions/repository';
-import { Button } from '@/components/ui/button';
 
 enum ImportStep {
   RepositorySelection = 0,
@@ -29,7 +28,7 @@ export function RepositoryImportClient() {
   // Server action wrapper for handling commit selection
   const commitsSelectedAction = async (commits: CommitInfo[]) => {
     // Call the server action to handle the selected commits
-    const result = await selectCommitsAction(commits);
+    const result = await selectCommitsAction();
 
     if (result.success) {
       setSelectedCommits(commits);
@@ -63,7 +62,7 @@ export function RepositoryImportClient() {
         )}
 
         {currentStep === ImportStep.ContributorScanning && repositoryPath && (
-          <ContributorSelector 
+          <ContributorSelector
             repositoryPath={repositoryPath}
             onContributorsSelected={(contributors) => {
               setSelectedContributors(contributors);
@@ -74,7 +73,7 @@ export function RepositoryImportClient() {
         )}
 
         {currentStep === ImportStep.CommitExtraction && repositoryPath && (
-          <CommitExtraction 
+          <CommitExtraction
             repositoryPath={repositoryPath}
             contributors={selectedContributors}
             onCommitsSelectedAction={commitsSelectedAction}
@@ -83,7 +82,7 @@ export function RepositoryImportClient() {
         )}
 
         {currentStep === ImportStep.CommitImport && (
-          <CommitImport 
+          <CommitImport
             commits={selectedCommits}
             onBack={() => setCurrentStep(ImportStep.CommitExtraction)}
             onComplete={() => {

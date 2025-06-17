@@ -51,9 +51,9 @@ export async function validateRepository(repositoryPath: string): Promise<{ vali
     return { valid: true };
   } catch (error) {
     console.error('Error validating repository:', error);
-    return { 
-      valid: false, 
-      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+    return {
+      valid: false,
+      error: error instanceof Error ? error.message : 'An unknown error occurred'
     };
   }
 }
@@ -94,25 +94,23 @@ export async function scanContributors(repositoryPath: string): Promise<{ contri
     return { contributors };
   } catch (error) {
     console.error('Error scanning contributors:', error);
-    return { 
+    return {
       contributors: [],
-      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+      error: error instanceof Error ? error.message : 'An unknown error occurred'
     };
   }
 }
 
-export async function selectCommitsAction(commits: CommitInfo[]): Promise<{ success: boolean; error?: string }> {
+export async function selectCommitsAction(): Promise<{ success: boolean; error?: string }> {
   try {
     // This action will be used to handle the selection of commits for import
     // In a real implementation, you might want to store these selected commits somewhere
-    console.log(`Selected ${commits.length} commits for import`);
-
     return { success: true };
   } catch (error) {
     console.error('Error selecting commits:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unknown error occurred'
     };
   }
 }
@@ -127,33 +125,24 @@ async function parseSquashedCommits(
     // Get the full commit message and details
     const result = await git.raw(['show', '--format=%B', '--no-patch', commitHash]);
     const fullMessage = result.trim();
-    
-    console.log(`\n=== ANALYZING COMMIT ${commitHash.substring(0, 7)} ===`);
-    console.log(`Full message:\n${fullMessage}`);
-    console.log(`Message length: ${fullMessage.length}`);
-    
+
     // Get parent information
     const parents = await git.raw(['show', '--format=%P', '--no-patch', commitHash]);
     const parentHashes = parents.trim().split(' ').filter(h => h.length > 0);
-    console.log(`Parents: ${parentHashes.length} - ${parentHashes.join(', ')}`);
-    
+
     let subCommits: CommitInfo[] = [];
-    
+
     // Check if this is a merge commit (has multiple parents)
     if (parentHashes.length === 2) {
-      console.log(`This is a merge commit - checking for squashed commits`);
-      
       try {
         // Get commits that were merged (from feature branch)
         const mergeRange = `${parentHashes[0]}..${parentHashes[1]}`;
-        console.log(`Checking range: ${mergeRange}`);
-        
+
         const squashedCommitsResult = await git.raw(['log', '--pretty=format:%H|%s|%an|%ae|%ad', '--date=iso', mergeRange]);
-        
+
         if (squashedCommitsResult && squashedCommitsResult.trim()) {
           const squashedCommitLines = squashedCommitsResult.trim().split('\n');
-          console.log(`Found ${squashedCommitLines.length} commits in merge range`);
-          
+
           if (squashedCommitLines.length > 0) {
             subCommits = squashedCommitLines.map((line, index) => {
               const parts = line.split('|');
@@ -162,9 +151,7 @@ async function parseSquashedCommits(
               const author = parts[2] || contributor.name;
               const email = parts[3] || contributor.email;
               const date = parts[4] || commitDate;
-              
-              console.log(`  - Subcommit: ${hash.substring(0, 7)} - ${message}`);
-              
+
               return {
                 hash,
                 message,
@@ -176,20 +163,15 @@ async function parseSquashedCommits(
                 originalSquashHash: commitHash
               };
             });
-            
-            console.log(`Returning ${subCommits.length} subcommits for merge`);
+
             return subCommits;
           }
-        } else {
-          console.log(`No commits found in merge range ${mergeRange}`);
         }
       } catch (mergeError) {
-        console.log('Error checking merge range:', mergeError);
+        // Silently continue to other checks
       }
-    } else {
-      console.log(`Not a merge commit (${parentHashes.length} parents)`);
     }
-    
+
     // Check for GitHub squash merge patterns in commit message
     // These commits have patterns like "* feat: some feature" in their messages
     const squashPatterns = [
@@ -198,17 +180,15 @@ async function parseSquashedCommits(
       /^-\s+(.+)$/gm, // Simple dash format: "- commit message"
       /^\d+\.\s+(.+)$/gm, // Numbered format: "1. commit message"
     ];
-    
+
     for (const pattern of squashPatterns) {
       const matches = Array.from(fullMessage.matchAll(pattern));
-      
+
       if (matches.length > 1) {
-        console.log(`Found ${matches.length} subcommits using pattern: ${pattern.source}`);
-        
         subCommits = matches.map((match, index) => {
           let subHash: string;
           let subMessage: string;
-          
+
           if (pattern.source.includes('([a-f0-9]{7,40})')) {
             // Pattern includes hash capture group
             subHash = match[1];
@@ -218,9 +198,7 @@ async function parseSquashedCommits(
             subHash = `${commitHash.substring(0, 7)}-${index}`;
             subMessage = match[1];
           }
-          
-          console.log(`  - Pattern match: ${subHash.substring(0, 7)} - ${subMessage}`);
-          
+
           return {
             hash: subHash,
             message: subMessage,
@@ -232,15 +210,12 @@ async function parseSquashedCommits(
             originalSquashHash: commitHash
           };
         });
-        
+
         if (subCommits.length > 0) {
-          console.log(`Returning ${subCommits.length} subcommits from pattern matching`);
           return subCommits;
         }
       }
     }
-    
-    console.log(`No squashed commits detected in ${commitHash.substring(0, 7)}`);
     return [];
   } catch (error) {
     console.error('Error parsing squashed commits:', error);
@@ -254,12 +229,9 @@ export async function extractCommitsAction(
   fromDate: string,
   toDate: string
 ): Promise<{ commits: CommitInfo[]; error?: string }> {
-  console.log('extractCommits called with:', { repositoryPath, contributors, fromDate, toDate });
-
   try {
     // Normalize path for cross-platform compatibility
     const normalizedPath = path.normalize(repositoryPath);
-    console.log('Normalized path:', normalizedPath);
 
     // Initialize git in the specified directory
     const git: SimpleGit = simpleGit(normalizedPath);
@@ -269,12 +241,9 @@ export async function extractCommitsAction(
 
     // Extract commits for each contributor
     for (const contributor of contributors) {
-      console.log('Processing contributor:', contributor);
-
       try {
         // Create author filter string
         const authorFilter = `${contributor.name} <${contributor.email}>`;
-        console.log('Author filter:', authorFilter);
 
         // Get commits for this contributor in the date range
         // Use --date-order to ensure commits are ordered by date
@@ -286,12 +255,9 @@ export async function extractCommitsAction(
           '--date-order',
           '--pretty=format:%H|%s|%ad|%an|%ae'
         ];
-        console.log('Git log options:', logOptions);
 
         // Use git.log instead of git.raw for better handling
         const result = await git.raw(['log', ...logOptions]);
-        console.log('Git log result length:', result ? result.length : 0);
-        console.log('Git log result sample:', result ? result.substring(0, 200) + '...' : 'empty');
 
         if (result && result.trim() !== '') {
           // Parse the commit log
@@ -321,14 +287,11 @@ export async function extractCommitsAction(
             })
             .filter((commit): commit is CommitInfo => commit !== null);
 
-          console.log(`Found ${commits.length} regular commits for contributor ${contributor.name}`);
-          
           // Check each commit for squashed content and add both original and subcommits
           for (const commit of commits) {
             const squashedCommits = await parseSquashedCommits(git, commit.hash, contributor, commit.date);
             if (squashedCommits.length > 0) {
               // Mark the original commit as a squash merge and add it
-              console.log(`Found squash merge with ${squashedCommits.length} individual commits`);
               const squashMergeCommit = {
                 ...commit,
                 isSquashMerge: true
@@ -342,7 +305,7 @@ export async function extractCommitsAction(
             }
           }
         } else {
-          console.log(`No commits found for contributor ${contributor.name}`);
+          // No commits found for this contributor
         }
       } catch (contributorError) {
         console.error(`Error processing contributor ${contributor.name}:`, contributorError);
@@ -354,36 +317,28 @@ export async function extractCommitsAction(
     const seenCommits = new Set<string>();
     const uniqueCommits: CommitInfo[] = [];
     let duplicatesRemoved = 0;
-    
+
     for (const commit of allCommits) {
       // Create a composite key to identify truly duplicate commits
       const commitKey = `${commit.message}|${commit.date}|${commit.author}|${commit.email}`;
-      
+
       if (!seenCommits.has(commitKey)) {
         seenCommits.add(commitKey);
         uniqueCommits.push(commit);
       } else {
         duplicatesRemoved++;
-        console.log(`Removed duplicate commit: ${commit.hash.substring(0, 7)} - ${commit.message.substring(0, 50)}...`);
       }
     }
-    
+
     // Sort commits by date (newest first)
     uniqueCommits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    const regularCommits = uniqueCommits.filter(c => !c.isSquashed).length;
-    const squashedCommits = uniqueCommits.filter(c => c.isSquashed).length;
-    
-    console.log(`Total commits found: ${allCommits.length}`);
-    console.log(`Duplicates removed: ${duplicatesRemoved}`);
-    console.log(`Final unique commits: ${uniqueCommits.length} (${regularCommits} regular, ${squashedCommits} from squashed merges)`);
 
     return { commits: uniqueCommits };
   } catch (error) {
     console.error('Error extracting commits:', error);
-    return { 
+    return {
       commits: [],
-      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+      error: error instanceof Error ? error.message : 'An unknown error occurred'
     };
   }
 }
