@@ -12,10 +12,10 @@ interface CommitPreviewListClientProps {
   onBack: () => void;
 }
 
-export function CommitPreviewListClient({ 
-  commits, 
-  commitsSelectedAction, 
-  onBack 
+export function CommitPreviewListClient({
+  commits,
+  commitsSelectedAction,
+  onBack
 }: CommitPreviewListClientProps) {
   const [selectedCommits, setSelectedCommits] = useState<CommitInfo[]>(commits);
   const [currentPage, setCurrentPage] = useState(1);
@@ -107,9 +107,9 @@ export function CommitPreviewListClient({
           </div>
         </div>
         <div className="space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleSelectAll}
           >
             {selectedCommits.length === commits.length ? 'Deselect All' : 'Select All'}
@@ -147,27 +147,12 @@ export function CommitPreviewListClient({
               <tbody className="bg-white divide-y divide-gray-200">
                 {Object.entries(groupedCommits).map(([groupKey, groupCommits]) => (
                   <React.Fragment key={groupKey}>
-                    {/* Group header for squashed commits */}
-                    {groupKey !== 'regular' && (
-                      <tr className="bg-blue-100 border-t-2 border-blue-200">
-                        <td colSpan={5} className="px-6 py-3">
-                          <div className="flex items-center space-x-3">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-200 text-blue-900">
-                              📦 Squash Merge
-                            </span>
-                            <span className="text-sm font-medium text-blue-900">
-                              {groupKey.substring(0, 7)} ({groupCommits.length} commits)
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                    
+
                     {/* Individual commits in the group */}
                     {groupCommits.map((commit) => (
                       <tr key={commit.hash} className={`hover:bg-gray-50 ${commit.isSquashed ? 'bg-blue-50' : ''}`}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Checkbox 
+                          <Checkbox
                             checked={selectedCommits.some(c => c.hash === commit.hash)}
                             onCheckedChange={() => toggleCommit(commit)}
                           />
@@ -247,7 +232,7 @@ export function CommitPreviewListClient({
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button 
+        <Button
           onClick={handleContinue}
           disabled={selectedCommits.length === 0 || isSubmitting}
         >
